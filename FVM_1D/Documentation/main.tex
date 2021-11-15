@@ -1,0 +1,388 @@
+\documentclass{report}
+\usepackage{geometry}
+\geometry{margin=1.05in}
+\usepackage{amsmath}
+\usepackage[makeroom]{cancel}
+%\numberwithin{equation}{section}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{empheq}
+%\usepackage{slashbox}
+\newcommand*\widefbox[1]{\fbox{\hspace{2em}#1\hspace{2em}}}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage[table,pdftex,dvipsnames]{xcolor}
+\usepackage{animate}
+
+\usepackage{multicol}
+\hypersetup{
+	colorlinks,
+	linkcolor={red!50!black},
+	citecolor={black},
+	urlcolor={blue!80!black}
+}
+\graphicspath{{img/}}
+\DeclareMathOperator\sech{sech}
+\graphicspath{{img/}}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{ifthen}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+%\lstset{frame=tb,
+%	language=Matlab,
+%	aboveskip=3mm,
+%	belowskip=3mm,
+%	showstringspaces=false,
+%	columns=flexible,
+%	basicstyle={\small\ttfamily},
+%	numbers=none,
+%	numberstyle=\tiny\color{gray},
+%	keywordstyle=\color{blue},
+%	commentstyle=\color{dkgreen},
+%	stringstyle=\color{mauve},
+%	breaklines=true,
+%	breakatwhitespace=true,
+%	tabsize=3
+%}
+%
+
+\lstset{language=[5.3]lua,
+	%	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{OliveGreen},
+	keywordstyle=\color{RoyalBlue},
+	numberstyle=\tiny\color{Gray},
+	stringstyle=\color{Orange},
+	basicstyle=\footnotesize\ttfamily,
+	breaklines=true, breakatwhitespace=true,     
+	breaklines=true,                 
+	captionpos=t,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2,
+	frame=tb,
+	prebreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\space\hookrightarrow\space}},
+}
+
+
+
+
+\setlength{\textwidth}{6.5in}
+\setlength{\textheight}{8.5in}
+\setlength{\evensidemargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\topmargin}{0in}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.1in}
+
+\usepackage[section]{placeins}
+
+\let\Oldsubsection\subsection
+\renewcommand{\subsection}{\FloatBarrier\Oldsubsection}
+
+\let\Oldsubsubsection\subsubsection
+\renewcommand{\subsubsection}{\FloatBarrier\Oldsubsubsection}
+
+
+%%%%%%%%%%%%%%%% Notes and things to add:
+% Maybe use widetilde instead of tilde
+% Clean up this header section over here
+% Double check all equation labels and references.
+
+
+% Do I even want a title page on these?
+\title{1D Euler Equations using the Finite Volume Method}
+\author{Chirag R. Skolar, PhD}
+\date{\today}
+
+\begin{document}
+\maketitle
+	
+Some sort of intro here about Euler eqs.   
+% Unsure how much detail I want to go into this. Do I start from first principles and derive it or what?
+	
+\begin{align}
+	\frac{\partial \rho}{\partial t} + \nabla \cdot \big(\rho \mathbf{u} \big) &= 0  \label{eq:euler_cont} \\
+	\frac{\partial \big( \rho \mathbf{u} \big) }{\partial t} + \nabla \cdot \big( \rho \mathbf{u} \mathbf{u} + p \mathbf{I} \big) &= 0  \label{eq:euler_mtm}  \\
+	\frac{ \partial \mathcal{E}}{\partial t} + \nabla \cdot \big( [ \mathcal{E} + p] \mathbf{u} \big) &= 0 \label{eq:euler_energy} ,
+\end{align}
+where
+\begin{equation}
+	\mathcal{E} = \frac{p}{\gamma-1} + \frac{1}{2} \rho \mathbf{u} \cdot \mathbf{u}
+\end{equation}
+Eqs.~\ref{eq:euler_cont}-\ref{eq:euler_energy} can be rewritten as
+\begin{equation}
+	\frac{\partial \mathbf{Q}}{\partial t} + \nabla \cdot \mathbf{F} = 0 .\label{eq:hyperbolic} 
+\end{equation}
+The conservative variables are
+\begin{equation}
+	\mathbf{Q} = 
+	\begin{bmatrix}
+		Q_1 \\ Q_2 \\ Q_3 \\ Q_4 \\ Q_5
+	\end{bmatrix} = 
+	\begin{bmatrix}
+		\rho \\
+		\rho u \\
+		\rho v \\
+		\rho w \\
+		\mathcal{E} 
+	\end{bmatrix} = 
+	\begin{bmatrix}
+		V_1 \\
+		V_1 V_2 \\
+		V_1 V_3 \\
+		V_1 V_4 \\
+		\frac{V_5}{\gamma-1} + \frac{1}{2} V_1 \big( V_2^2 + V_3^2 + V_4^2 \big)
+	\end{bmatrix}. \label{eq:cons_var}
+\end{equation}
+The primitive variables are   % Not sure if we need this but leave it in here for now
+\begin{equation}
+	\mathbf{V} = 
+	\begin{bmatrix}
+		V_1 \\ V_2 \\ V_3 \\ V_4 \\ V_5
+	\end{bmatrix} = 
+	\begin{bmatrix}
+		\rho \\ u \\ v \\ w \\ p
+	\end{bmatrix} = 
+	\begin{bmatrix}
+		Q_1 \\
+		\frac{Q_2}{Q_1} \\
+		\frac{Q_3}{Q_1} \\
+		\frac{Q_4}{Q_1} \\
+	(\gamma-1) \big[Q_5 - \frac{1}{2 Q_1} ( Q_2^2 + Q_3^2 + Q_4^2) \big]
+	\end{bmatrix}. \label{eq:prim_var} 
+\end{equation}
+The flux tensor, $\mathbf{F}$ can be written as a combination of three column vectors,
+\begin{equation}
+	\mathbf{F}_x = 
+	\begin{bmatrix}
+		\rho u \\
+		\rho u^2 + p \\
+		\rho u v \\
+		\rho u w \\
+		( \mathcal{E} + p ) u 
+	\end{bmatrix} =
+	\begin{bmatrix}
+		Q_2 \\
+		\frac{Q_2^2}{Q_1} + (\gamma-1) \big[ Q_5 - \frac{1}{2 Q_1} (Q_2^2 + Q_3^2 + Q_4^2) \big] \\
+		\frac{Q_2 Q_3}{Q_1} \\
+		\frac{Q_2 Q_4}{Q_1} \\
+		\frac{Q_2}{Q_1} \big[ \gamma Q_5 + \frac{1-\gamma}{2 Q_1} (Q_2^2+Q_3^2+Q_4^2) \big] 
+	\end{bmatrix}
+\end{equation}
+\begin{equation}
+	\mathbf{F}_y = 
+	\begin{bmatrix}
+		\rho v \\
+		\rho uv \\
+		\rho v^2 + p \\
+		\rho v w \\
+		( \mathcal{E} + p ) v
+	\end{bmatrix} =
+	\begin{bmatrix}
+		Q_3 \\
+		\frac{Q_2 Q_3}{Q_1} \\
+		\frac{Q_3^2}{Q_1} + (\gamma-1) \big[ Q_5 - \frac{1}{2 Q_1} (Q_2^2 + Q_3^2 + Q_4^2) \big] \\
+		\frac{Q_3 Q_4}{Q_1} \\
+		\frac{Q_3}{Q_1} \big[ \gamma Q_5 + \frac{1-\gamma}{2 Q_1} (Q_2^2+Q_3^2+Q_4^2) \big] 
+	\end{bmatrix}
+\end{equation}
+\begin{equation}
+	\mathbf{F}_z = 
+	\begin{bmatrix}
+		\rho w \\
+		\rho uw \\
+		\rho v w \\
+		\rho w^2 + p \\
+		( \mathcal{E} + p ) w
+	\end{bmatrix}
+	\begin{bmatrix}
+		Q_4 \\
+		\frac{Q_2 Q_4}{Q_1} \\
+		\frac{Q_3 Q_4}{Q_1} \\
+		\frac{Q_4^2}{Q_1} + (\gamma-1) \big[ Q_5 - \frac{1}{2 Q_1} (Q_2^2 + Q_3^2 + Q_4^2) \big] \\
+		\frac{Q_4}{Q_1} \big[ \gamma Q_5 + \frac{1-\gamma}{2 Q_1} (Q_2^2+Q_3^2+Q_4^2) \big] 
+	\end{bmatrix}
+\end{equation}
+
+% Get flux jacobians. Maybe use maxima for this?
+
+Get the characteristic speeds. Convert the equations into quasilinear form. 
+Use the chain rule for the divergence term in Eq.~\ref{eq:hyperbolic} 
+to get the derivatives onto the conservative variables.
+\begin{equation}
+	\frac{\partial \mathbf{Q}}{\partial t} + \frac{\partial \mathbf{F} }{\partial \mathbf{Q}} \nabla \cdot \mathbf{Q} = 0 \label{eq:quasilinear}
+\end{equation}
+The flux Jacobians are
+\begin{equation}
+	\frac{\partial \mathbf{F}_x}{\partial \mathbf{Q}} = 
+	\begin{bmatrix}
+		0 & 1 & 0 & 0 & 0\\  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		- \frac{Q_2^2}{Q_1^2} + \frac{\gamma-1}{2 Q_1^2} \big( Q_2^2 + Q_3^2 + Q_4^2 \big) & 
+		(3-\gamma) \frac{Q_2}{Q_1} &
+		(1-\gamma) \frac{Q_3}{Q_1} &
+		(1-\gamma) \frac{Q_4}{Q_1} & 
+		\gamma - 1  \\  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		- \frac{Q_2 Q_3 }{Q_1^2} & 
+		\frac{Q_3}{Q_1} &
+		\frac{Q_2}{Q_1} &
+		0 & 0 \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		 
+		- \frac{Q_2 Q_4}{Q_1^2} & 
+		\frac{Q_4}{Q_1} & 
+		0 & 
+		\frac{Q_2}{Q_1} & 0 \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		- \frac{\gamma  Q_2 Q_5}{Q_1^2} + (\gamma-1) \frac{Q_2}{Q_1^3} \big( Q_2^2 + Q_3^2 + Q_4^2 \big) &
+		\gamma \frac{Q_5}{Q_1} + \frac{1-\gamma}{2 Q_1^2} \big( 3 Q_2^2 + Q_3^2 + Q_4^2 \big) &
+		(1-\gamma) \frac{Q_2 Q_3}{Q_1^2}  & 
+		(1-\gamma) \frac{Q_2 Q_4}{Q_1^2} & 
+		\gamma \frac{Q_2}{Q_1}
+	\end{bmatrix}
+\end{equation}
+
+The flux Jacobians in primitive variables are
+\begin{equation}
+	\frac{\partial \mathbf{F}_x}{\partial \mathbf{Q}} = 
+	\begin{bmatrix}
+		0  & 1 & 0 & 0 & 0   \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		\frac{\gamma-3}{2} u^2 + \frac{\gamma-1}{2} (v^2 + w^2) & 
+		(3-\gamma) u & 
+		(1-\gamma) v & 
+		(1-\gamma) w & 
+		\gamma - 1  \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		-uv & 
+		v &
+		u & 0 & 0  \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		- uw & 
+		w & 0 & u & 0  \\ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		\frac{\gamma}{1-\gamma} \frac{ p u }{\rho} + \frac{\gamma -2}{2} u \big(u^2 + v^2 + w^2 \big) &
+		\frac{\gamma}{\gamma-1} \frac{p}{\rho} + \frac{3-2\gamma}{2}u^2 + \frac{1}{2} \big(v^2+w^2) &
+		(1-\gamma) uv &
+		(1-\gamma) uw &
+		\gamma u
+	\end{bmatrix}
+\end{equation}
+
+
+Convert Eqs.~\ref{eq:euler_cont}-\ref{eq:euler_energy} to primitive form. First, begin with the continuity equation, Eq.~\ref{eq:euler_cont} and use the
+product rule for the divergence term, which is $\nabla \cdot( \psi \mathbf{A} ) = \psi \nabla \cdot \mathbf{A}+ \mathbf{A}\cdot \nabla \psi$.
+\begin{equation}
+	\frac{\partial \rho}{\partial t} + \nabla \cdot \big( \rho \mathbf{u} \big) 
+	= \frac{\partial \rho}{\partial t} + \rho \nabla \cdot \mathbf{u}+ \mathbf{u} \cdot \nabla \rho = 0
+\end{equation}
+Next do the momentum equation, Eq.~\ref{eq:euler_mtm} using the product rule on the temporal derivative term
+and using $\nabla \cdot (\mathbf{u}\mathbf{v}) = (\nabla \cdot \mathbf{u})\mathbf{v} + \mathbf{u} \cdot \nabla \mathbf{v}$ on the divergence term.
+Note that at one point, we use the continuity equation (Eq.~\ref{eq:euler_cont}) in this derivation.
+\begin{align}
+	\frac{\partial \rho \mathbf{u}}{\partial t} + \nabla \cdot \big(\rho \mathbf{u} \mathbf{u} + p \mathbf{I} \big) &=
+	\rho \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u}\frac{\partial \rho }{\partial t} + \nabla p + \nabla \cdot \big(\rho \mathbf{u} \mathbf{ u}\big) \\
+	&= \mathbf{u} \Bigg[ \underbrace{\frac{\partial \rho}{\partial t} + \nabla \cdot \big(\rho \mathbf{u}\big) }_{0}\Bigg] + \rho \frac{\partial \mathbf{u}}{\partial t} + \rho \mathbf{u} \cdot \nabla \mathbf{u} + \nabla p = 0 \\
+	&= \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u}+ \frac{1}{\rho} \nabla p = 0
+\end{align}
+The energy equation, Eq.~\ref{eq:euler_energy}, requires a lot more work. First expand the energy term.
+\begin{align}
+	\frac{\partial \mathcal{E}}{\partial t} + \nabla \cdot \big( [ \mathcal{E} + p] \mathbf{u} \big)  &= 0 \\
+	\frac{\partial }{\partial t} \Bigg[ \frac{p}{\gamma-1} + \frac{1}{2} \rho \mathbf{u} \cdot \mathbf{u} \Bigg]
+	+ \nabla \cdot \Bigg[ \bigg( \frac{\gamma}{\gamma-1} + \frac{1}{2} \rho \mathbf{u}\cdot \mathbf{u} \bigg) \mathbf{u} \Bigg] &= 0
+\end{align}
+Next, split the equation into the pressure and kinetic energy parts and multiply the whole equation by $\gamma-1$
+\begin{equation}
+	 \frac{\partial p}{\partial t} + \gamma \nabla \cdot \big(p \mathbf{u} \big) 
+	+ \frac{\gamma-1}{2} \Bigg[ \underbrace{\frac{\partial}{\partial t} \big(\rho \mathbf{u} \cdot \mathbf{u} \big) + \nabla \cdot \big( \mathbf{u} \rho \mathbf{u}\cdot \mathbf{u} \big)}_{R} \Bigg] = 0
+\end{equation}
+Now, we will just focus on $R$. Use the product rule and rearrange terms. Note that we substitute in the continuity equation in here as well.
+\begin{equation}
+	R = \mathbf{u}\cdot \mathbf{u} \Bigg[ \underbrace{ \frac{\partial \rho}{\partial t} + \rho \nabla \cdot \mathbf{u}+ \mathbf{u} \cdot \nabla \rho}_{0} \Bigg]
++ \rho \frac{\partial (\mathbf{u} \cdot \mathbf{u} )}{\partial t} + \rho \mathbf{u}\cdot \nabla \big(\mathbf{u}\cdot \mathbf{u} \big)
+\end{equation}
+Next, we use the product rule for the temporal derivative term and the identity for the gradient of a dot product, $\nabla \mathbf{A}\cdot \mathbf{B} = \mathbf{A}\cdot \nabla \mathbf{B}+ \mathbf{B}\cdot \nabla \mathbf{A}$.
+\begin{equation}
+	R = 2 \rho \mathbf{u} \cdot \Bigg[ \frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u} \Bigg]
+\end{equation}
+Inside the brackets, add and subtract $\rho^{-1} \nabla p$ to get the momentum equation.
+\begin{align}
+	R &= 2 \rho \mathbf{u} \cdot \Bigg[ \underbrace{\frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u} + \frac{1}{\rho} \nabla p }_{0}- \frac{1}{\rho }\nabla p \Bigg] \\
+	&= - 2 \mathbf{u}\cdot \nabla p
+\end{align}
+Now, we can plug $R$ back in and use the product rule for divergence.
+\begin{align}
+	\frac{\partial p}{\partial t} + \gamma \nabla \cdot \big(p \mathbf{u} \big) 
+	+ \frac{\gamma-1}{2} R &= 
+	\frac{\partial p}{\partial t} + \gamma p \nabla \cdot \mathbf{u} + \gamma \mathbf{u}\cdot \nabla p 
+	- \frac{\gamma-1}{\cancel{2}} \cancel{2} \mathbf{u}\cdot \nabla p \\
+	&= \frac{\partial p}{\partial t} + \gamma p \nabla \cdot \mathbf{u} + \mathbf{u}\cdot \nabla p = 0
+\end{align}
+Thus, the Euler equations in primitive form are
+\begin{align}
+	\frac{\partial \rho}{\partial t} + \rho \nabla \cdot \mathbf{u}+ \mathbf{u} \cdot \nabla \rho &= 0\\
+	\frac{\partial \mathbf{u}}{\partial t} + \mathbf{u} \cdot \nabla \mathbf{u}+ \frac{1}{\rho} \nabla p &= 0 \\
+	\frac{\partial p}{\partial t} + \gamma p \nabla \cdot \mathbf{u} + \mathbf{u}\cdot \nabla p &= 0
+\end{align}
+These equations are already in the quasilinear form from Eq.\ref{eq:quasilinear}. 
+\begin{equation} % See if we can rewrite this in a better way
+	\frac{\partial \mathbf{V}}{\partial t} + \tilde{\mathbf{A}}_x \frac{\partial \mathbf{V}}{\partial x} + \tilde{\mathbf{A}}_y \frac{\partial \mathbf{V}}{\partial y} + \tilde{\mathbf{A}}_z \frac{\partial \mathbf{V}}{\partial z}
+\end{equation}
+Thus, we can write $\tilde{\mathbf{A}}$, which is the flux Jacobian for the primitive variables, in terms of its $x$, $y$, and $z$ components.
+\begin{align}
+	\tilde{\mathbf{A}}_x &= \begin{bmatrix}
+		u & \rho & 0 & 0 & 0 \\
+		0 & u & 0 & 0 & 1/\rho \\
+		0 & 0 & u & 0 & 0 \\
+		0 & 0 & 0 & u & 0 \\
+		0 & \gamma p & 0 & 0 & u
+	\end{bmatrix} \\
+	\tilde{\mathbf{A}}_y &= \begin{bmatrix}
+		v & 0 & \rho & 0 & 0 \\
+		0 & v & 0 & 0 & 0 \\
+		0 & 0 & v & 0 & 1/\rho \\
+		0 & 0 & 0 & v & 0 \\
+		0 & 0 & \gamma p & 0 & v
+	\end{bmatrix} \\
+	\tilde{\mathbf{A}}_z &= \begin{bmatrix}
+		w & 0 & 0 & \rho & 0 \\
+		0 & w & 0 & 0 & 0 \\
+		0 & 0 & w & 0 & 0 \\
+		0 & 0 & 0 & w & 1/\rho \\
+		0 & 0 & 0 & \gamma p & w
+	\end{bmatrix}
+\end{align}
+Next, find the eigenvalues of $\tilde{\mathbf{A}}_x$ to get the fastest speed in $x$.
+We end up getting the following characteristic polynomial
+\begin{equation}
+	\big(u - \lambda\big)^3 \bigg[ \big( u - \lambda \big)^2 - \frac{\gamma p}{\rho} \big) \bigg] = 0
+\end{equation}
+Therefore, the 5 eigenvalues are
+\begin{align}
+	\lambda_{1,2,3} &= 0 \\
+	\lambda_{4,5} &= u \pm \sqrt{\frac{\gamma p}{\rho}} = u \pm a
+\end{align}
+Note that $a=\sqrt{\frac{\gamma p}{\rho}}$ is the speed of sound.
+
+
+
+Eventually, ICs from \cite{sod1978survey}.
+
+% Maybe go through full determinant calculation? Can do this in the three directions. For now, just keep it with 1D.
+% Review some linear algebra. There are definitely tricks that we can use to solve these determinants simpler?
+
+
+
+
+
+
+\bibliographystyle{plainnat}
+\bibliography{reference}
+\addcontentsline{toc}{section}{Reference}
+	
+\end{document}
