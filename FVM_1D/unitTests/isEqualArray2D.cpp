@@ -1,7 +1,7 @@
-// Unit test for the isEqualDouble function in testing_functions.cpp
-// This function determines if two numbers are equal within some tolerance
+// Unit test for the isEqualArray2D function in testing_functions.cpp
+// This function determines if each element in two 2D arrays are equal within some tolerance
 // This is important because there is inherent error in double precision numbers
-// COMPLETE. This function works as intended. 2021/11/14
+// COMPLETE. This function works as intended. 2021/11/16
 
 
 // Include headers
@@ -17,20 +17,35 @@ int main() {
 
     // Print what we are doing
     cout << "------------------------------------- " << \
-    "This is a test of the isEqualDouble function." << \
+    "This is a test of the isEqualArray2D function." << \
     " -------------------------------------" << endl;    
-
+    
     // Set a tolerance
     double TOL = 1e-10;
 
-    // Set some arbitrary value
-    double val = 1.1;
+    // Set an array of values
+    ArrayXXd vals(2,2);
+    vals.setConstant(1.1);        
 
-    // We can test 4 different modes of this function to determine how well it works
+    // We can test 4 different modes of this function to determine how well it works:
+    // Greater and within tolerance
+    // Greater and outside tolerance
+    // Lower and within tolerance
+    // Lower and outside tolerance
+    
+    // Build the test array
+    ArrayXXd testArray(2,2);  
+    testArray(0,0) = vals(0,0) + 0.1*TOL;
+    testArray(0,1) = vals(0,1) + 1.1*TOL;
+    testArray(1,0) = vals(1,0) - 0.1*TOL;
+    testArray(1,1) = vals(1,1) - 1.1*TOL;  
+
+    // Use the isEqualArray1D function to see if these are equal.
+    Array<bool,Dynamic,Dynamic> boolArray = isEqualArray2D(vals, testArray, TOL);
 
     // First, we will test to make sure that val+0.1*TOL is considered equal since it will by definition be within the tolerance
-    bool higher_within_TOL = isEqualDouble(val, val + 0.1*TOL, TOL);   // This should result in 1
-    if (higher_within_TOL == 1) {  // 
+    // This should result in 1
+    if (boolArray(0,0) == 1) {  // 
         cout << "Test of higher but within tolerance is a success." << endl;
     } 
     else {
@@ -40,8 +55,8 @@ int main() {
     }
 
     // Test to make sure that val+1.1*TOL is not considered equal since it will by definition be outside the tolerance
-    bool higher_over_TOL = isEqualDouble(val, val + 1.1*TOL, TOL);   // This should result in 0
-    if (higher_over_TOL == 0) {  // 
+    // This should result in 0
+    if (boolArray(0,1) == 0) {  // 
         cout << "Test of higher over tolerance is a success." << endl;
     } 
     else {        
@@ -51,8 +66,8 @@ int main() {
     }   
 
     // Test to make sure that val-0.1*TOL is considered equal since it will by definition be within the tolerance
-    bool lower_within_TOL = isEqualDouble(val, val - 0.1*TOL, TOL);   // This should result in 1
-    if (lower_within_TOL == 1) {  // 
+    // This should result in 1
+    if (boolArray(1,0) == 1) {  // 
         cout << "Test of lower but within tolerance is a success." << endl;
     } 
     else {
@@ -62,8 +77,8 @@ int main() {
     } 
 
     // Test to make sure that val-1.1*TOL is not considered equal since it will by definition be outside the tolerance
-    bool lower_less_TOL = isEqualDouble(val, val - 1.1*TOL, TOL);   // This should result in 0
-    if (lower_less_TOL == 0) {  // 
+    // This should result in 0
+    if (boolArray(1,1) == 0) {  // 
         cout << "Test of lower but outside tolerance is a success." << endl;
     } 
     else {
@@ -73,4 +88,5 @@ int main() {
     } 
 
     cout << endl << endl;
+    
 }

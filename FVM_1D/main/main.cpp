@@ -46,7 +46,19 @@ int main() {
     
     // Maybe put everything below this in some sort of "runSim" function?
     runSimulation(gasGamma, maxIter, nCells, numGhost, xLeft, xRight);
-    std::cout << "Hello World!" << endl;
+    // std::cout << "Hello World!" << endl;
+
+    ArrayXXd test(2,3);
+
+    test.setConstant(1.1);
+
+
+    //test << 1.,2.,3.,4.,5.,6.,7.;
+
+    cout << test.size() << endl;
+    cout << test.rows() << endl;
+    cout << test.cols() << endl;
+
 
     
 }
