@@ -1,4 +1,4 @@
-# This shell script runs the main simulation 
+# This shell script runs the all of our test functions
 
 # CD into directory where the testing scripts are
 cd unitTests
